@@ -5,22 +5,22 @@
 using namespace std;
 
 struct AnimHorizDecal {
-    olc::Decal* img;    //  Переменная типа Декаль 
-    olc::vf2d pos;      //  Вектор с коорнидатами
-    olc::vf2d size;     //  Вектор с  размером
-    int max_frame;      //  Макс. кол-во кадров
-    float fps;          //  Количество кадров в секунду
+    olc::Decal* img;    //  Переменная типа Декаль. 
+    olc::vf2d pos;      //  Вектор с коорнидатами.
+    olc::vf2d size;     //  Вектор с  размером.
+    int max_frame;      //  Макс. кол-во кадров.
+    float fps;          //  Количество кадров в секунду.
 
-    int frame = 0;                      //  Счетчик кадров
-    olc::vf2d scale = { 2.0f, 2.0f };   //  Масштаб вектора
+    int frame = 0;                      //  Счетчик кадров.
+    olc::vf2d scale = { 2.0f, 2.0f };   //  Масштаб вектора.
 
-    float _currFps = 0;                 //  Текущий фпс
-    olc::vf2d _currFrame = { 0, 0 };    //  Текущий кадр 
+    float _currFps = 0;                 //  Текущий фпс.
+    olc::vf2d _currFrame = { 0, 0 };    //  Текущий кадр.
 
-    olc::vf2d _shift = { 1, 0 };        //  Смещение 
+    olc::vf2d _shift = { 1, 0 };        //  Смещение.
 
-    void update(float deltaT) {                 //  Фунуция обновления кадров
-        _currFrame = size * _shift * frame; //  Расчёт текущего кадра 
+    void update(float deltaT) {                 //  Фунуция обновления кадров.
+        _currFrame = size * _shift * frame; //  Расчёт текущего кадра. 
         if (frame >= max_frame)
             frame = 0;
         if (_currFps > fps) {
@@ -33,6 +33,9 @@ struct AnimHorizDecal {
 
 class QuantumRunner : public olc::PixelGameEngine
 {
+private:
+    olc::vf2d m_c_p;    //  Изначальные координаты игрового персонажа.
+        
 public:
 	QuantumRunner()
 	{
