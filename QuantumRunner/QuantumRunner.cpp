@@ -4,20 +4,19 @@
 
 using namespace std;
 
-struct AnimHorizDecal {
+struct AnimDecal {
     olc::Decal* img;    //  Переменная типа Декаль. 
     olc::vf2d pos;      //  Вектор с коорнидатами.
     olc::vf2d size;     //  Вектор с  размером.
     int max_frame;      //  Макс. кол-во кадров.
     float fps;          //  Количество кадров в секунду.
+    olc::vf2d _shift;   //  Смещение.
 
     int frame = 0;                      //  Счетчик кадров.
     olc::vf2d scale = { 2.0f, 2.0f };   //  Масштаб вектора.
 
     float _currFps = 0;                 //  Текущий фпс.
     olc::vf2d _currFrame = { 0, 0 };    //  Текущий кадр.
-
-    olc::vf2d _shift = { 1, 0 };        //  Смещение.
 
     void update(float deltaT) {                 //  Фунуция обновления кадров.
         _currFrame = size * _shift * frame; //  Расчёт текущего кадра. 
@@ -34,24 +33,53 @@ struct AnimHorizDecal {
 class QuantumRunner : public olc::PixelGameEngine
 {
 private:
-    olc::vf2d m_c_p;    //  Изначальные координаты игрового персонажа.
+    //Game Character
+    olc::Decal* StandChar;   //  Декаль двигающейся картинки
+    olc::Decal* WalkChar;    //  Декаль статической картинки
+
+    AnimDecal w_ch;        //  Структура типа персонажа
+
+    olc::vf2d m_c_p;        //  Изначальные координаты игрового персонажа.
         
 public:
 	QuantumRunner()
 	{
-		
 		sAppName = "QuantumRunner";	//	Название проэкта.
 	}
 
 public:
+    void drawAnimDecal(AnimDecal& p, float deltaT)                          //  Функция отрисовки анимированной декали
+    {
+        p.update(deltaT);                                                   //  Обновление кадров
+        DrawPartialDecal(p.pos, p.img, p._currFrame, p.size, p.scale);      //  Ортисовка анимированной декали
+    }
+
 	bool OnUserCreate() override
 	{
-		
+        auto temp = new olc::Sprite("./StandingCop.png");
+        StandChar = new olc::Decal(temp);
+
+        temp = new olc::Sprite("./WalkingCop.png");
+        WalkChar = new olc::Decal(temp);
+
+        w_ch = {
+            WalkChar,
+            m_c_p,
+            olc::vf2d(62, 67),
+            8,
+            0.17,
+            olc::vf2d(1,0)
+        };
+
 		return true;
 	}
 
 	bool OnUserUpdate(float fElapsedTime) override
 	{
+        if (GetKey(olc::Key::W).bHeld or GetKey(olc::Key::S).bHeld or GetKey(olc::Key::A).bHeld or GetKey(olc::Key::D).bHeld)
+            drawAnimDecal(w_ch, fElapsedTime);
+        else
+            DrawDecal(m_c_p, StandChar, olc::vf2d(2.0f, 2.0f));
 
 		return true;
 	}
