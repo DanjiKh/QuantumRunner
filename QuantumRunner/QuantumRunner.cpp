@@ -108,7 +108,7 @@ public:
 int main()
 {
 	QuantumRunner demo;
-	if (demo.Construct(1280, 720, 2, 2))
+	if (demo.Construct(720, 560, 2, 2))
 		demo.Start();
 	return 0;
 }
