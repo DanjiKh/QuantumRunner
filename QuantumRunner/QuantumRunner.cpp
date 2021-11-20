@@ -40,6 +40,7 @@ private:
     AnimDecal w_ch;        //  Структура типа персонажа
 
     olc::vf2d m_c_p;        //  Изначальные координаты игрового персонажа.
+    olc::vf2d m_c_s = { 124, 124 };
         
 public:
 	QuantumRunner()
@@ -48,18 +49,36 @@ public:
 	}
 
 public:
-    void drawAnimDecal(AnimDecal& p, float deltaT)                          //  Функция отрисовки анимированной декали
+    void movingChar()
+    {
+        if (GetKey(olc::Key::W).bHeld and m_c_p.y >= 0)
+            m_c_p.y -= 0.2;
+        if (GetKey(olc::Key::S).bHeld)
+            m_c_p.y += 0.2;
+        if (GetKey(olc::Key::A).bHeld and m_c_p.x >= 0)
+            m_c_p.x -= 0.2;
+        if (GetKey(olc::Key::D).bHeld)
+            m_c_p.x += 0.2;
+
+        if (m_c_p.x >= ScreenWidth() - m_c_s.x)
+            m_c_p.x = ScreenWidth() - m_c_s.x;
+        if (m_c_p.y >= ScreenHeight() - m_c_s.y)
+            m_c_p.y = ScreenHeight() - m_c_s.y;
+
+    }
+
+    void drawAnimDecal(AnimDecal& p, olc::vf2d pos, float deltaT)                          //  Функция отрисовки анимированной декали
     {
         p.update(deltaT);                                                   //  Обновление кадров
-        DrawPartialDecal(p.pos, p.img, p._currFrame, p.size, p.scale);      //  Ортисовка анимированной декали
+        DrawPartialDecal(pos, p.img, p._currFrame, p.size, p.scale);      //  Ортисовка анимированной декали
     }
 
 	bool OnUserCreate() override
 	{
-        auto temp = new olc::Sprite("./StandingCop.png");
+        auto temp = new olc::Sprite("./StandingCop.png");           //  Картинка игрового персонажа
         StandChar = new olc::Decal(temp);
 
-        temp = new olc::Sprite("./WalkingCop.png");
+        temp = new olc::Sprite("./WalkingCop.png");                 //  Анимированная картинка игрового персонажа
         WalkChar = new olc::Decal(temp);
 
         w_ch = {
@@ -69,15 +88,16 @@ public:
             8,
             0.17,
             olc::vf2d(1,0)
-        };
+        };                                                          // Основные данные игрового персонажа
 
 		return true;
 	}
 
 	bool OnUserUpdate(float fElapsedTime) override
 	{
+        movingChar();
         if (GetKey(olc::Key::W).bHeld or GetKey(olc::Key::S).bHeld or GetKey(olc::Key::A).bHeld or GetKey(olc::Key::D).bHeld)
-            drawAnimDecal(w_ch, fElapsedTime);
+            drawAnimDecal(w_ch, m_c_p, fElapsedTime);
         else
             DrawDecal(m_c_p, StandChar, olc::vf2d(2.0f, 2.0f));
 
@@ -88,7 +108,7 @@ public:
 int main()
 {
 	QuantumRunner demo;
-	if (demo.Construct(256, 240, 4, 4))
+	if (demo.Construct(1280, 720, 2, 2))
 		demo.Start();
 	return 0;
 }
