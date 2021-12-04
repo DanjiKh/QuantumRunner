@@ -5,7 +5,7 @@
 using namespace std;
 
 struct AnimDecal {
-    olc::Decal* img;    //  Переменная типа Декаль. 
+    olc::Decal* img;    //  Переменная типа Картинка. 
     olc::vf2d pos;      //  Вектор с коорнидатами.
     olc::vf2d size;     //  Вектор с  размером.
     int max_frame;      //  Макс. кол-во кадров.
@@ -30,14 +30,31 @@ struct AnimDecal {
     }
 };
 
+struct Button {
+    uint64_t layer;             //  Слой на котором находиться кнопка
+    olc::vf2d pos;              //  Координаты кнопки
+    olc::vf2d size;             //  Размер кнопки
+    std::string text;           //  Текст на кнопке
+    olc::Pixel color;           //  Цвет кнопки
+    olc::Pixel text_color;      //  Цвет текста на кнопке
+    olc::Decal* img;            //  Картинка кнопки
+
+    bool check(olc::vf2d mouse) {
+        return (mouse - pos) > olc::vf2d(0, 0) && (mouse - pos) < size;         //  Проверка мыши относительно кнопки
+    };
+};
+
 class QuantumRunner : public olc::PixelGameEngine
 {
 private:
+    std::vector<Button> m_baton;
+    uint64_t m_layer = 0;
+
     //Game Character
     olc::Decal* StandChar;   //  Декаль двигающейся картинки
     olc::Decal* WalkChar;    //  Декаль статической картинки
 
-    AnimDecal w_ch;        //  Структура типа персонажа
+    AnimDecal w_ch;        //  Структура типа персонажаs
 
     olc::vf2d m_c_p;        //  Изначальные координаты игрового персонажа.
     olc::vf2d m_c_s = { 124, 124 };
@@ -68,10 +85,20 @@ public:
 
     }
 
-    void drawAnimDecal(AnimDecal& p, olc::vf2d pos, float deltaT)                          //  Функция отрисовки анимированной декали
+    void drawAnimDecal(AnimDecal& p, olc::vf2d pos, float deltaT)               //  Функция отрисовки анимированной декали
     {
         p.update(deltaT);                                                   //  Обновление кадров
-        DrawPartialDecal(pos, p.img, p._currFrame, p.size, p.scale);      //  Ортисовка анимированной декали
+        DrawPartialDecal(pos, p.img, p._currFrame, p.size, p.scale);        //  Ортисовка анимированной декали
+    }
+
+    void DrawButton()                                                           //  Функция отрисовки кнопок
+    {
+        for (auto& i : m_baton) {
+            if (i.layer == m_layer) {
+                FillRect(i.pos, i.size, i.color);
+                DrawStringDecal(i.pos + i.size / 2 - GetTextSize(i.text) / 2, i.text, i.text_color);
+            };
+        };
     }
 
 	bool OnUserCreate() override
