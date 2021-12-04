@@ -49,7 +49,7 @@ public:
 	}
 
 public:
-    void movingChar()
+    olc::vf2d movingChar()
     {
         if (GetKey(olc::Key::W).bHeld and m_c_p.y >= 0)
             m_c_p.y -= 0.2;
@@ -64,6 +64,7 @@ public:
             m_c_p.x = ScreenWidth() - m_c_s.x;
         if (m_c_p.y >= ScreenHeight() - m_c_s.y)
             m_c_p.y = ScreenHeight() - m_c_s.y;
+        return m_c_p;
 
     }
 
@@ -95,11 +96,20 @@ public:
 
 	bool OnUserUpdate(float fElapsedTime) override
 	{
-        movingChar();
+        Clear(olc::Pixel());
+
+        olc::vf2d p1 = movingChar();
+        olc::vf2d p2 = GetMousePos();
+        olc::vf2d n = (p2 - p1).norm();
+        olc::vf2d max_len = GetWindowSize();
+
+        for (auto j = 0.0; (p1 - n * j).mag() < max_len.mag(); j += 1)
+            Draw(p1 + n * j, olc::GREEN);
+
         if (GetKey(olc::Key::W).bHeld or GetKey(olc::Key::S).bHeld or GetKey(olc::Key::A).bHeld or GetKey(olc::Key::D).bHeld)
-            drawAnimDecal(w_ch, m_c_p, fElapsedTime);
+            drawAnimDecal(w_ch, p1, fElapsedTime);
         else
-            DrawDecal(m_c_p, StandChar, olc::vf2d(2.0f, 2.0f));
+            DrawDecal(p1, StandChar, olc::vf2d(2.0f, 2.0f));
 
 		return true;
 	}
