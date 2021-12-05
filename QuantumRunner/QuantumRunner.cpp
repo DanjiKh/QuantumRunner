@@ -5,6 +5,7 @@
 using namespace std;
 
 struct AnimDecal {
+    uint64_t layer;     //  Слой на находиться декаль.
     olc::Decal* img;    //  Переменная типа Картинка. 
     olc::vf2d pos;      //  Вектор с коорнидатами.
     olc::vf2d size;     //  Вектор с  размером.
@@ -31,16 +32,16 @@ struct AnimDecal {
 };
 
 struct Button {
-    uint64_t layer;             //  Слой на котором находиться кнопка
-    olc::vf2d pos;              //  Координаты кнопки
-    olc::vf2d size;             //  Размер кнопки
-    std::string text;           //  Текст на кнопке
-    olc::Pixel color;           //  Цвет кнопки
-    olc::Pixel text_color;      //  Цвет текста на кнопке
-    olc::Decal* img;            //  Картинка кнопки
+    uint64_t layer;             //  Слой на котором находиться кнопка.
+    olc::vf2d pos;              //  Координаты кнопки.
+    olc::vf2d size;             //  Размер кнопки.
+    std::string text;           //  Текст на кнопке.
+    olc::Pixel color;           //  Цвет кнопки.
+    olc::Pixel text_color;      //  Цвет текста на кнопке.
+    olc::Decal* img;            //  Картинка кнопки.
 
     bool check(olc::vf2d mouse) {
-        return (mouse - pos) > olc::vf2d(0, 0) && (mouse - pos) < size;         //  Проверка мыши относительно кнопки
+        return (mouse - pos) > olc::vf2d(0, 0) && (mouse - pos) < size;         //  Проверка мыши относительно кнопки.
     };
 };
 
@@ -50,11 +51,14 @@ private:
     std::vector<Button> m_baton;
     uint64_t m_layer = 0;
 
-    //Game Character
-    olc::Decal* StandChar;   //  Декаль двигающейся картинки
-    olc::Decal* WalkChar;    //  Декаль статической картинки
+    std::vector<AnimDecal> a_decals;
+    uint64_t a_layer = 0;
 
-    AnimDecal w_ch;        //  Структура типа персонажаs
+    //Game Character
+    olc::Decal* StandChar;   //  Декаль двигающейся картинки.
+    olc::Decal* WalkChar;    //  Декаль статической картинки.
+
+    AnimDecal w_ch;        //  Структура типа персонажаs.
 
     olc::vf2d m_c_p;        //  Изначальные координаты игрового персонажа.
     olc::vf2d m_c_s = { 124, 124 };
@@ -85,13 +89,23 @@ public:
 
     }
 
-    void drawAnimDecal(AnimDecal& p, olc::vf2d pos, float deltaT)               //  Функция отрисовки анимированной декали
+    /*void drawAnimDecal(AnimDecal& p, olc::vf2d pos, float deltaT)               //  Функция отрисовки анимированной декали.
     {
-        p.update(deltaT);                                                   //  Обновление кадров
-        DrawPartialDecal(pos, p.img, p._currFrame, p.size, p.scale);        //  Ортисовка анимированной декали
+        p.update(deltaT);                                                   //  Обновление кадров.
+        DrawPartialDecal(pos, p.img, p._currFrame, p.size, p.scale);        //  Ортисовка анимированной декали.
+    }*/
+
+    void DrawAnimDecal(float deltaT) {
+        for (auto& i : a_decals) {
+            if (i.layer == a_layer)
+            {
+                i.update(deltaT);
+                DrawPartialDecal(m_c_p, i.img, i._currFrame, i.size, i.scale);
+            }
+        }
     }
 
-    void DrawButton()                                                           //  Функция отрисовки кнопок
+    void DrawButton()                                                           //  Функция отрисовки кнопок.
     {
         for (auto& i : m_baton) {
             if (i.layer == m_layer) {
@@ -103,20 +117,33 @@ public:
 
 	bool OnUserCreate() override
 	{
-        auto temp = new olc::Sprite("./StandingCop.png");           //  Картинка игрового персонажа
+        auto temp = new olc::Sprite("./StandingCop.png");           //  Картинка игрового персонажа.
         StandChar = new olc::Decal(temp);
 
-        temp = new olc::Sprite("./WalkingCop.png");                 //  Анимированная картинка игрового персонажа
+        temp = new olc::Sprite("./WalkingCop.png");                 //  Анимированная картинка игрового персонажа.
         WalkChar = new olc::Decal(temp);
 
-        w_ch = {
-            WalkChar,
-            m_c_p,
-            olc::vf2d(62, 67),
-            8,
-            0.17,
-            olc::vf2d(1,0)
-        };                                                          // Основные данные игрового персонажа
+        a_decals.push_back(
+            AnimDecal{
+                0,
+                WalkChar,
+                m_c_p,
+                olc::vf2d(62, 67),
+                8,
+                0.17,
+                olc::vf2d(1,0)
+            });
+
+        m_baton.push_back(
+            Button{
+                0,
+                {100, 100},
+                {50, 20},
+                "play",
+                olc::Pixel(255, 255, 255),
+                olc::Pixel(0, 0, 0),
+                nullptr
+            });
 
 		return true;
 	}
@@ -124,6 +151,8 @@ public:
 	bool OnUserUpdate(float fElapsedTime) override
 	{
         Clear(olc::Pixel());
+            
+        DrawButton();
 
         olc::vf2d p1 = movingChar();
         olc::vf2d p2 = GetMousePos();
@@ -134,7 +163,7 @@ public:
             Draw(p1 + n * j, olc::GREEN);
 
         if (GetKey(olc::Key::W).bHeld or GetKey(olc::Key::S).bHeld or GetKey(olc::Key::A).bHeld or GetKey(olc::Key::D).bHeld)
-            drawAnimDecal(w_ch, p1, fElapsedTime);
+            DrawAnimDecal(fElapsedTime);
         else
             DrawDecal(p1, StandChar, olc::vf2d(2.0f, 2.0f));
 
