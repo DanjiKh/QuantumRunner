@@ -6,6 +6,7 @@ using namespace std;
 
 struct AnimDecal {
     uint64_t layer;     //  Слой на находиться декаль.
+    uint64_t id;        //  Уникальный Id декали.
     olc::Decal* img;    //  Переменная типа Картинка. 
     olc::vf2d pos;      //  Вектор с коорнидатами.
     olc::vf2d size;     //  Вектор с  размером.
@@ -33,6 +34,7 @@ struct AnimDecal {
 
 struct Button {
     uint64_t layer;             //  Слой на котором находиться кнопка.
+    uint64_t id;                //  Уникальный Id кнопки.
     olc::vf2d pos;              //  Координаты кнопки.
     olc::vf2d size;             //  Размер кнопки.
     std::string text;           //  Текст на кнопке.
@@ -41,7 +43,11 @@ struct Button {
     olc::Decal* img;            //  Картинка кнопки.
 
     bool check(olc::vf2d mouse) {
-        return (mouse - pos) > olc::vf2d(0, 0) && (mouse - pos) < size;         //  Проверка мыши относительно кнопки.
+        auto p = mouse - pos;
+        return p.x > 0 
+            && p.x < size.x
+            && p.y > 0
+            && p.y < size.x;    //  Проверка мыши относительно кнопки.
     };
 };
 
@@ -86,7 +92,6 @@ public:
         if (m_c_p.y >= ScreenHeight() - m_c_s.y)
             m_c_p.y = ScreenHeight() - m_c_s.y;
         return m_c_p;
-
     }
 
     /*void drawAnimDecal(AnimDecal& p, olc::vf2d pos, float deltaT)               //  Функция отрисовки анимированной декали.
@@ -102,6 +107,31 @@ public:
                 i.update(deltaT);
                 DrawPartialDecal(m_c_p, i.img, i._currFrame, i.size, i.scale);
             }
+        }
+    }
+
+    void UpdateButtons() {
+        for (auto& i : m_baton) {
+            if (i.layer == m_layer) {
+                switch (i.id)
+                {
+                    case 1: {
+                        if (i.check(GetMousePos()) && GetMouse(0).bReleased) {
+                            m_layer = 1;
+                        }
+                        break;
+                    }
+                    
+                    case 2: {
+                        if (i.check(GetMousePos()) && GetMouse(0).bReleased) {
+                            olc_Terminate();
+                        }
+                        break;
+                    }
+                    
+
+                }
+            };
         }
     }
 
@@ -125,7 +155,8 @@ public:
 
         a_decals.push_back(
             AnimDecal{
-                0,
+                1,
+                1,
                 WalkChar,
                 m_c_p,
                 olc::vf2d(62, 67),
@@ -137,9 +168,22 @@ public:
         m_baton.push_back(
             Button{
                 0,
-                {100, 100},
-                {50, 20},
-                "play",
+                1,
+                {200, 100},
+                {100, 50},
+                "Play",
+                olc::Pixel(255, 255, 255),
+                olc::Pixel(0, 0, 0),
+                nullptr
+            });
+
+        m_baton.push_back(
+            Button{
+                0,
+                2,
+                {200, 200},
+                {100, 50},
+                "Quit",
                 olc::Pixel(255, 255, 255),
                 olc::Pixel(0, 0, 0),
                 nullptr
@@ -151,7 +195,8 @@ public:
 	bool OnUserUpdate(float fElapsedTime) override
 	{
         Clear(olc::Pixel());
-            
+
+        UpdateButtons();
         DrawButton();
 
         olc::vf2d p1 = movingChar();
@@ -162,7 +207,7 @@ public:
         for (auto j = 0.0; (p1 - n * j).mag() < max_len.mag(); j += 1)
             Draw(p1 + n * j, olc::GREEN);
 
-        if (GetKey(olc::Key::W).bHeld or GetKey(olc::Key::S).bHeld or GetKey(olc::Key::A).bHeld or GetKey(olc::Key::D).bHeld)
+        if (GetKey(olc::Key::W).bHeld || GetKey(olc::Key::S).bHeld || GetKey(olc::Key::A).bHeld || GetKey(olc::Key::D).bHeld)
             DrawAnimDecal(fElapsedTime);
         else
             DrawDecal(p1, StandChar, olc::vf2d(2.0f, 2.0f));
@@ -178,5 +223,3 @@ int main()
 		demo.Start();
 	return 0;
 }
-
-
