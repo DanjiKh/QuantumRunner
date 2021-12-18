@@ -5,7 +5,7 @@
 using namespace std;
 
 struct AnimDecal {
-    uint64_t layer;     //  Слой на находиться декаль.
+    uint64_t layer;     //  Слой на котором находиться декаль.
     uint64_t id;        //  Уникальный Id декали.
     olc::Decal* img;    //  Переменная типа Картинка. 
     olc::vf2d pos;      //  Вектор с коорнидатами.
@@ -13,10 +13,9 @@ struct AnimDecal {
     int max_frame;      //  Макс. кол-во кадров.
     float fps;          //  Количество кадров в секунду.
     olc::vf2d _shift;   //  Смещение.
+    olc::vf2d scale;    //  Масштаб вектора
 
-    int frame = 0;                      //  Счетчик кадров.
-    olc::vf2d scale = { 2.0f, 2.0f };   //  Масштаб вектора.
-
+    int frame = 0;                      //  Счетчик кадров
     float _currFps = 0;                 //  Текущий фпс.
     olc::vf2d _currFrame = { 0, 0 };    //  Текущий кадр.
 
@@ -63,8 +62,7 @@ private:
     //Game Character
     olc::Decal* StandChar;   //  Декаль двигающейся картинки.
     olc::Decal* WalkChar;    //  Декаль статической картинки.
-
-    AnimDecal w_ch;        //  Структура типа персонажаs.
+    olc::Decal* AnimQuant;    //  Декаль двигающейся картинки.
 
     olc::vf2d m_c_p;        //  Изначальные координаты игрового персонажа.
     olc::vf2d m_c_s = { 124, 124 };
@@ -79,13 +77,13 @@ public:
     olc::vf2d movingChar()
     {
         if (GetKey(olc::Key::W).bHeld and m_c_p.y >= 0)
-            m_c_p.y -= 0.2;
+            m_c_p.y -= 0.15;
         if (GetKey(olc::Key::S).bHeld)
-            m_c_p.y += 0.2;
+            m_c_p.y += 0.15;
         if (GetKey(olc::Key::A).bHeld and m_c_p.x >= 0)
-            m_c_p.x -= 0.2;
+            m_c_p.x -= 0.15;
         if (GetKey(olc::Key::D).bHeld)
-            m_c_p.x += 0.2;
+            m_c_p.x += 0.15;
 
         if (m_c_p.x >= ScreenWidth() - m_c_s.x)
             m_c_p.x = ScreenWidth() - m_c_s.x;
@@ -118,6 +116,7 @@ public:
                     case 1: {
                         if (i.check(GetMousePos()) && GetMouse(0).bReleased) {
                             m_layer = 1;
+                            a_layer = 1;
                         }
                         break;
                     }
@@ -153,6 +152,9 @@ public:
         temp = new olc::Sprite("./WalkingCop.png");                 //  Анимированная картинка игрового персонажа.
         WalkChar = new olc::Decal(temp);
 
+        temp = new olc::Sprite("./AnimQuantum2.png");                 //  Анимированная картинка игрового персонажа.
+        AnimQuant = new olc::Decal(temp);
+
         a_decals.push_back(
             AnimDecal{
                 1,
@@ -161,8 +163,21 @@ public:
                 m_c_p,
                 olc::vf2d(62, 67),
                 8,
-                0.17,
-                olc::vf2d(1,0)
+                0.15,
+                olc::vf2d(1,0),
+                olc::vf2d(2.0, 2.0)
+            });
+        a_decals.push_back(
+            AnimDecal{
+                2,
+                2,
+                AnimQuant,
+                m_c_p,
+                olc::vf2d(108, 193),
+                8,
+                0.15,
+                olc::vf2d(1,0),
+                olc::vf2d(1.0,1.0)
             });
 
         m_baton.push_back(
@@ -204,13 +219,26 @@ public:
         olc::vf2d n = (p2 - p1).norm();
         olc::vf2d max_len = GetWindowSize();
 
-        for (auto j = 0.0; (p1 - n * j).mag() < max_len.mag(); j += 1)
-            Draw(p1 + n * j, olc::GREEN);
 
-        if (GetKey(olc::Key::W).bHeld || GetKey(olc::Key::S).bHeld || GetKey(olc::Key::A).bHeld || GetKey(olc::Key::D).bHeld)
-            DrawAnimDecal(fElapsedTime);
-        else
-            DrawDecal(p1, StandChar, olc::vf2d(2.0f, 2.0f));
+        for (auto& i : a_decals) {
+            if (i.layer == a_layer)
+            {
+                for (auto j = 0.0; (p1 - n * j).mag() < max_len.mag(); j += 1)
+                    Draw(p1 + n * j, olc::GREEN);
+
+
+
+                if (GetKey(olc::Key::W).bHeld || GetKey(olc::Key::S).bHeld || GetKey(olc::Key::A).bHeld || GetKey(olc::Key::D).bHeld) {
+                    a_layer = 1;
+                    DrawAnimDecal(fElapsedTime);
+                }
+                else {
+                    //DrawDecal(p1, StandChar, olc::vf2d(2.0f, 2.0f));
+                    a_layer = 2;
+                    DrawAnimDecal(fElapsedTime);
+                }
+            }
+        }
 
 		return true;
 	}
