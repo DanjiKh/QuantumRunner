@@ -3255,7 +3255,7 @@ namespace olc
 			}
 
 			if (glSwapIntervalEXT != nullptr && !bVSYNC)
-				glSwapIntervalEXT(olc_Display, *olc_Window, 0);
+				glSwapIntervalEXT(olc_Display, *olc_Window, 0); 
 #endif		
 
 #if defined(OLC_PLATFORM_GLUT)

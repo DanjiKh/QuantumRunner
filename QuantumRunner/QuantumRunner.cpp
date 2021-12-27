@@ -43,7 +43,7 @@ struct Button {
 
     bool check(olc::vf2d mouse) {
         auto p = mouse - pos;
-        return p.x > 0 
+        return p.x > 0
             && p.x < size.x
             && p.y > 0
             && p.y < size.x;    //  Проверка мыши относительно кнопки.
@@ -118,10 +118,24 @@ public:
                             m_layer = 1;
                             a_layer = 1;
                         }
+                        if (i.check(GetMousePos()) || GetMouse(0).bHeld) {
+                            i.color = { 50, 50, 50 };
+                            i.text_color = { 255, 255, 255 };
+                        }
+                        else
+                        {
+                            i.color = { 255, 255, 255 };
+                            i.text_color = {0, 0, 0};
+                        }
+                        break;
+                    }
+
+                    case 2: {
+                        
                         break;
                     }
                     
-                    case 2: {
+                    case 3: {
                         if (i.check(GetMousePos()) && GetMouse(0).bReleased) {
                             olc_Terminate();
                         }
@@ -196,7 +210,19 @@ public:
             Button{
                 0,
                 2,
-                {200, 200},
+                {200, 175},
+                {100, 50},
+                "Settings",
+                olc::Pixel(255, 255, 255),
+                olc::Pixel(0, 0, 0),
+                nullptr
+            });
+
+        m_baton.push_back(
+            Button{
+                0,
+                3,
+                {200, 250},
                 {100, 50},
                 "Quit",
                 olc::Pixel(255, 255, 255),
@@ -226,16 +252,14 @@ public:
                 for (auto j = 0.0; (p1 - n * j).mag() < max_len.mag(); j += 1)
                     Draw(p1 + n * j, olc::GREEN);
 
-
-
                 if (GetKey(olc::Key::W).bHeld || GetKey(olc::Key::S).bHeld || GetKey(olc::Key::A).bHeld || GetKey(olc::Key::D).bHeld) {
                     a_layer = 1;
                     DrawAnimDecal(fElapsedTime);
                 }
                 else {
-                    //DrawDecal(p1, StandChar, olc::vf2d(2.0f, 2.0f));
-                    a_layer = 2;
-                    DrawAnimDecal(fElapsedTime);
+                    DrawDecal(p1, StandChar, olc::vf2d(2.0f, 2.0f));
+                    //a_layer = 2;
+                    //DrawAnimDecal(fElapsedTime);
                 }
             }
         }
@@ -247,7 +271,7 @@ public:
 int main()
 {
 	QuantumRunner demo;
-	if (demo.Construct(720, 560, 2, 2))
+	if (demo.Construct(1280, 720, 2, 2, 0))
 		demo.Start();
 	return 0;
 }
