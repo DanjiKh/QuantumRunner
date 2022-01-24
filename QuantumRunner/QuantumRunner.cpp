@@ -55,7 +55,6 @@ class QuantumRunner : public olc::PixelGameEngine
 private:
     std::vector<Button> m_baton;
     uint64_t m_layer = 0;
-
     std::vector<AnimDecal> a_decals;
     uint64_t a_layer = 0;
 
@@ -63,6 +62,7 @@ private:
     olc::Decal* StandChar;   //  Декаль двигающейся картинки.
     olc::Decal* WalkChar;    //  Декаль статической картинки.
     olc::Decal* AnimQuant;    //  Декаль двигающейся картинки.
+    olc::Decal* MouseAim;
 
     olc::vf2d m_c_p;        //  Изначальные координаты игрового персонажа.
     olc::vf2d m_c_s = { 124, 124 };
@@ -74,16 +74,16 @@ public:
 	}
 
 public:
-    olc::vf2d movingChar()
+    olc::vf2d movingChar(float deltaT)
     {
         if (GetKey(olc::Key::W).bHeld and m_c_p.y >= 0)
-            m_c_p.y -= 0.15;
+            m_c_p.y -= 0.3;
         if (GetKey(olc::Key::S).bHeld)
-            m_c_p.y += 0.15;
+            m_c_p.y += 0.3;
         if (GetKey(olc::Key::A).bHeld and m_c_p.x >= 0)
-            m_c_p.x -= 0.15;
+            m_c_p.x -= 0.3;
         if (GetKey(olc::Key::D).bHeld)
-            m_c_p.x += 0.15;
+            m_c_p.x += 0.3;
 
         if (m_c_p.x >= ScreenWidth() - m_c_s.x)
             m_c_p.x = ScreenWidth() - m_c_s.x;
@@ -92,18 +92,25 @@ public:
         return m_c_p;
     }
 
-    /*void drawAnimDecal(AnimDecal& p, olc::vf2d pos, float deltaT)               //  Функция отрисовки анимированной декали.
-    {
-        p.update(deltaT);                                                   //  Обновление кадров.
-        DrawPartialDecal(pos, p.img, p._currFrame, p.size, p.scale);        //  Ортисовка анимированной декали.
-    }*/
-
     void DrawAnimDecal(float deltaT) {
         for (auto& i : a_decals) {
             if (i.layer == a_layer)
             {
                 i.update(deltaT);
                 DrawPartialDecal(m_c_p, i.img, i._currFrame, i.size, i.scale);
+            }
+        }
+    }
+
+    void UpdateDecals() {
+        for (auto& i : a_decals) {
+            if (i.layer == a_layer) {
+                switch (i.id) {
+                    case 3: {
+                        i.pos = GetMousePos();
+                        break;
+                    }
+                }
             }
         }
     }
@@ -118,7 +125,7 @@ public:
                             m_layer = 1;
                             a_layer = 1;
                         }
-                        if (i.check(GetMousePos()) || GetMouse(0).bHeld) {
+                        if (i.check(GetMousePos()) || (i.check(GetMousePos()) && GetMouse(0).bHeld )) {
                             i.color = { 50, 50, 50 };
                             i.text_color = { 255, 255, 255 };
                         }
@@ -129,7 +136,6 @@ public:
                         }
                         break;
                     }
-
                     case 2: {
                         
                         break;
@@ -141,8 +147,6 @@ public:
                         }
                         break;
                     }
-                    
-
                 }
             };
         }
@@ -169,31 +173,48 @@ public:
         temp = new olc::Sprite("./AnimQuantum2.png");                 //  Анимированная картинка игрового персонажа.
         AnimQuant = new olc::Decal(temp);
 
+        temp = new olc::Sprite("./Mouse_Aim.png");                 //  Анимированная картинка игрового персонажа.
+        MouseAim = new olc::Decal(temp);
+
+        //Decals
         a_decals.push_back(
             AnimDecal{
-                1,
+                2,
                 1,
                 WalkChar,
                 m_c_p,
                 olc::vf2d(62, 67),
                 8,
-                0.15,
-                olc::vf2d(1,0),
+                0.3,
+                olc::vf2d(1.0, 0.0),
                 olc::vf2d(2.0, 2.0)
             });
-        a_decals.push_back(
+        /*a_decals.push_back(
             AnimDecal{
-                2,
+                1,
                 2,
                 AnimQuant,
                 m_c_p,
                 olc::vf2d(108, 193),
                 8,
                 0.15,
-                olc::vf2d(1,0),
-                olc::vf2d(1.0,1.0)
+                olc::vf2d(1.0, 0.0),
+                olc::vf2d(1.0, 1.0)
+            });*/
+        a_decals.push_back(
+            AnimDecal{
+                1,
+                3,
+                MouseAim,
+                GetMousePos(),
+                olc::vf2d(42, 42),  
+                4,
+                0.3,
+                olc::vf2d(1.0, 0.0),
+                olc::vf2d(2.0, 2.0)
             });
 
+        //Buttons
         m_baton.push_back(
             Button{
                 0,
@@ -237,10 +258,12 @@ public:
 	{
         Clear(olc::Pixel());
 
-        UpdateButtons();
         DrawButton();
+        UpdateButtons();
+        DrawAnimDecal(fElapsedTime);
+        UpdateDecals();
 
-        olc::vf2d p1 = movingChar();
+        olc::vf2d p1 = movingChar(fElapsedTime);
         olc::vf2d p2 = GetMousePos();
         olc::vf2d n = (p2 - p1).norm();
         olc::vf2d max_len = GetWindowSize();
@@ -249,15 +272,25 @@ public:
         for (auto& i : a_decals) {
             if (i.layer == a_layer)
             {
-                for (auto j = 0.0; (p1 - n * j).mag() < max_len.mag(); j += 1)
+                for (auto j = 0.0; (p1 - n * j).mag() < max_len.mag(); j += 1) {
                     Draw(p1 + n * j, olc::GREEN);
+                    if ((p1 + n * j).x <= 0
+                        || (p1 + n * j).x >= ScreenWidth()
+                        || (p1 + n * j).y <= 0
+                        || (p1 + n * j).y >= ScreenHeight()) {
+                        DrawCircle(p1 + n * j, 30, olc::RED);
+                        break;
+                    }
+                }
 
+                
                 if (GetKey(olc::Key::W).bHeld || GetKey(olc::Key::S).bHeld || GetKey(olc::Key::A).bHeld || GetKey(olc::Key::D).bHeld) {
-                    a_layer = 1;
+                    a_layer = 2;
                     DrawAnimDecal(fElapsedTime);
                 }
                 else {
                     DrawDecal(p1, StandChar, olc::vf2d(2.0f, 2.0f));
+                    a_layer = 1;
                     //a_layer = 2;
                     //DrawAnimDecal(fElapsedTime);
                 }
@@ -271,7 +304,7 @@ public:
 int main()
 {
 	QuantumRunner demo;
-	if (demo.Construct(1280, 720, 2, 2, 0))
+	if (demo.Construct(1280, 720, 2, 2))
 		demo.Start();
 	return 0;
 }
